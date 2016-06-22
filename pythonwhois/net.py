@@ -63,6 +63,16 @@ def get_whois_raw_wrapped(domain, server="", previous=None, rfc3490=True, never_
     whois_response = query_server(target_server, query)
     response = whois_response.response
 
+    if whois_response.server_is_dead:
+        # That's probably as far as we can go, the road ends here
+        return build_return_value(with_server_list, previous, server_list, True, True)
+    elif whois_response.still_in_cool_down:
+        # Mark this result as incomplete, so we can try again later but still use the data if we have any
+        return build_return_value(with_server_list, previous, server_list, False, True)
+    elif whois_response.request_failure:
+        cool_down_tracker.warn_limit_exceeded(target_server)
+        return build_return_value(with_server_list, previous, server_list, False, True)
+
     if never_cut:
         # If the caller has requested to 'never cut' responses, he will get the original response from the server (this is
         # useful for callers that are only interested in the raw data). Otherwise, if the target is verisign-grs, we will
@@ -80,16 +90,6 @@ def get_whois_raw_wrapped(domain, server="", previous=None, rfc3490=True, never_
                 break
     if not never_cut:
         new_list = [response] + previous
-
-    if whois_response.server_is_dead:
-        # That's probably as far as we can go, the road ends here
-        return build_return_value(with_server_list, new_list, server_list, True, True, )
-    elif whois_response.request_failure:
-        # Mark this result as incomplete, so we can try again later but still use the data if we have any
-        cool_down_tracker.warn_limit_exceeded(target_server)
-        return build_return_value(with_server_list, new_list, server_list, False, True)
-    elif whois_response.still_in_cool_down:
-        return build_return_value(with_server_list, new_list, server_list, False, True)
 
     server_list.append(target_server)
 

@@ -3,7 +3,7 @@ class RawResponseHolder:
     Holder class for WHOIS responses. Is capable of marking the retrieval as a failure.
     """
 
-    def __init__(self, response="", request_failure=False, still_in_cool_down=False, server_is_dead=False):
+    def __init__(self, response=None, request_failure=False, still_in_cool_down=False, server_is_dead=False):
         """
         Hold the WHOIS response
         :param response: The received response, if any
@@ -15,7 +15,7 @@ class RawResponseHolder:
         self.still_in_cool_down = still_in_cool_down
         self.server_is_dead = server_is_dead
 
-        if len(response) > 0:
+        if len(response) is not None:
             self.request_failure = self.check_for_exceeded_limit()
 
     def check_for_exceeded_limit(self):
